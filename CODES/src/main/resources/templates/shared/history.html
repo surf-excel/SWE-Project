@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('History')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-3xl mx-auto px-4 py-8 space-y-4">
+        <h1 class="text-2xl font-bold text-slate-900">Activity history</h1>
+        <div class="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100">
+            <div th:each="e : ${entries}" class="p-4">
+                <div class="text-sm font-medium text-slate-900">
+                    <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700" th:text="${e.actionType}"></span>
+                    <span class="ml-2" th:text="${e.details}"></span>
+                </div>
+                <div class="text-xs text-slate-500 mt-1"
+                     th:text="${#temporals.format(e.createdAt, 'yyyy-MM-dd HH:mm')}"></div>
+            </div>
+            <div th:if="${entries.empty}" class="p-10 text-center text-slate-500">No activity yet.</div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

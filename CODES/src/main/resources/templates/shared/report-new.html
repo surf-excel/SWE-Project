@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('File a report')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1 grid-bg">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-2xl mx-auto px-4 py-8 animate-fade-in-up">
+        <a th:href="@{/orphanage}" class="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </a>
+        <div class="bg-white border border-slate-200 rounded-2xl p-7 shadow-soft">
+            <h1 class="text-2xl font-extrabold text-slate-900">File a report</h1>
+            <p class="text-sm text-slate-500 mt-1">Admins will review and respond. Attach a photo if helpful.</p>
+
+            <form th:action="@{/orphanage/reports}" th:object="${form}" method="post" enctype="multipart/form-data" class="mt-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Report type</label>
+                    <select th:field="*{reportType}"
+                            class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition">
+                        <option value="">-- choose --</option>
+                        <option value="FOOD_SAFETY">Food safety</option>
+                        <option value="IMPERSONATION">Impersonation</option>
+                        <option value="WRONG_QUANTITY">Wrong quantity</option>
+                        <option value="EXPIRED_FOOD">Expired food</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                    <p class="text-xs text-red-600 mt-1" th:if="${#fields.hasErrors('reportType')}" th:errors="*{reportType}"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Description</label>
+                    <textarea th:field="*{description}" rows="5"
+                              placeholder="Describe what happened..."
+                              class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"></textarea>
+                    <p class="text-xs text-red-600 mt-1" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Photo evidence <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <label for="reportImage"
+                           class="mt-1.5 flex flex-col items-center justify-center w-full py-6 px-4 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition group">
+                        <img id="reportPreview" class="hidden max-h-44 rounded-lg shadow-soft mb-2" alt="Preview"/>
+                        <div id="reportPlaceholder" class="flex flex-col items-center text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-slate-400 group-hover:text-brand-500 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span class="mt-2 text-sm font-medium">Click to attach a photo</span>
+                            <span class="text-xs text-slate-400">JPG, PNG, GIF or WEBP &middot; up to 5 MB</span>
+                        </div>
+                    </label>
+                    <input id="reportImage" type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this, 'reportPreview', 'reportPlaceholder')"/>
+                </div>
+
+                <details class="rounded-lg border border-slate-200 bg-slate-50">
+                    <summary class="px-4 py-3 cursor-pointer text-sm font-semibold text-slate-700">Optional references</summary>
+                    <div class="grid grid-cols-3 gap-2 px-4 pb-4">
+                        <div>
+                            <label class="block text-xs text-slate-500">Donation ID</label>
+                            <input type="number" th:field="*{donationId}" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"/>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500">Claim ID</label>
+                            <input type="number" th:field="*{claimId}" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"/>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500">User ID</label>
+                            <input type="number" th:field="*{reportedUserId}" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"/>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <a th:href="@{/orphanage}" class="px-4 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 font-medium">Cancel</a>
+                    <button class="px-5 py-2.5 rounded-lg btn-primary">Submit report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        function previewImage(input, previewId, placeholderId) {
+            const file = input.files && input.files[0];
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(placeholderId);
+            if (!file) {
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
