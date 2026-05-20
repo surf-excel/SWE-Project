@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Admin')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <h1 class="text-2xl font-bold text-slate-900">Admin overview</h1>
+
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                <div class="text-xs uppercase text-slate-500">Users</div>
+                <div class="text-3xl font-bold" th:text="${totalUsers}"></div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                <div class="text-xs uppercase text-slate-500">Donations</div>
+                <div class="text-3xl font-bold" th:text="${totalDonations}"></div>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                <div class="text-xs uppercase text-slate-500">Open reports</div>
+                <div class="text-3xl font-bold" th:text="${reports.size()}"></div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 font-semibold">Reports</div>
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                    <tr>
+                        <th class="text-left px-4 py-3">#</th>
+                        <th class="text-left px-4 py-3">Type</th>
+                        <th class="text-left px-4 py-3">Reporter</th>
+                        <th class="text-left px-4 py-3">Description</th>
+                        <th class="text-left px-4 py-3">Status</th>
+                        <th class="text-left px-4 py-3">Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${reports}" class="border-t border-slate-100 align-top">
+                    <td class="px-4 py-3" th:text="${r.reportId}"></td>
+                    <td class="px-4 py-3" th:text="${r.reportType}"></td>
+                    <td class="px-4 py-3">
+                        <div th:text="${r.reporter.fullName}"></div>
+                        <div class="text-xs text-slate-500" th:text="${r.reporter.email}"></div>
+                    </td>
+                    <td class="px-4 py-3 max-w-md">
+                        <div class="text-sm" th:text="${r.description}"></div>
+                        <div class="text-xs text-slate-500 mt-1" th:if="${r.adminResponse}">
+                            Response: <span th:text="${r.adminResponse}"></span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700"
+                              th:text="${r.status}"></span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <form th:action="@{'/admin/reports/' + ${r.reportId} + '/status'}" method="post" class="flex flex-col gap-2 min-w-[200px]">
+                            <select name="status" class="rounded-md border border-slate-300 px-2 py-1 text-sm">
+                                <option value="PENDING">PENDING</option>
+                                <option value="INVESTIGATING">INVESTIGATING</option>
+                                <option value="RESOLVED">RESOLVED</option>
+                                <option value="DISMISSED">DISMISSED</option>
+                            </select>
+                            <textarea name="adminResponse" rows="2" placeholder="Response..."
+                                      class="rounded-md border border-slate-300 px-2 py-1 text-sm"></textarea>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900">
+                                Save
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${reports.empty}">
+                    <td colspan="6" class="px-4 py-10 text-center text-slate-500">No reports.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
