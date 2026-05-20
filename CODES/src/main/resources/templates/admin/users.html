@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Users')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-4">
+        <h1 class="text-2xl font-bold text-slate-900">Users</h1>
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600 text-xs uppercase">
+                    <tr>
+                        <th class="text-left px-4 py-3">#</th>
+                        <th class="text-left px-4 py-3">Name</th>
+                        <th class="text-left px-4 py-3">Email</th>
+                        <th class="text-left px-4 py-3">Role</th>
+                        <th class="text-left px-4 py-3">Status</th>
+                        <th class="text-right px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${users}" class="border-t border-slate-100">
+                    <td class="px-4 py-3" th:text="${u.userId}"></td>
+                    <td class="px-4 py-3 font-medium" th:text="${u.fullName}"></td>
+                    <td class="px-4 py-3" th:text="${u.email}"></td>
+                    <td class="px-4 py-3" th:text="${u.role}"></td>
+                    <td class="px-4 py-3">
+                        <span th:if="${u.enabled}" class="px-2 py-1 rounded-full text-xs bg-brand-100 text-brand-700">enabled</span>
+                        <span th:unless="${u.enabled}" class="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700">disabled</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <form th:if="${u.role.name() != 'ADMIN'}"
+                              th:action="@{'/admin/users/' + ${u.userId} + '/toggle'}" method="post">
+                            <button class="text-sm text-slate-700 hover:underline"
+                                    th:text="${u.enabled} ? 'Disable' : 'Enable'"></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
