@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Donation detail')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<main class="flex-1">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-2xl mx-auto px-4 py-8 space-y-6 animate-fade-in-up">
+        <a th:href="@{/orphanage}" class="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+        </a>
+
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-soft">
+            <img th:if="${donation.imagePath}" th:src="${donation.imagePath}" alt="Food" class="w-full h-64 object-cover"/>
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-slate-900" th:text="${donation.foodItemName}"></h1>
+                <p class="text-slate-500 mt-1" th:text="${donation.quantity}"></p>
+
+                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-slate-500 text-xs uppercase">Restaurant</div>
+                        <div th:text="${donation.restaurant.fullName}"></div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 text-xs uppercase">Pickup deadline</div>
+                        <div th:text="${#temporals.format(donation.pickupDeadline, 'yyyy-MM-dd HH:mm')}"></div>
+                    </div>
+                    <div class="col-span-2" th:if="${donation.specialInstructions}">
+                        <div class="text-slate-500 text-xs uppercase">Special instructions</div>
+                        <div th:text="${donation.specialInstructions}"></div>
+                    </div>
+                    <div class="col-span-2 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3">
+                        Disclaimer: Food quality and safety are the sole responsibility of the donating restaurant.
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-2">
+                    <a th:href="@{/orphanage}" class="px-4 py-2 rounded-md border border-slate-300 hover:bg-slate-50">Back</a>
+                    <form th:if="${donation.status.name() == 'AVAILABLE'}"
+                          th:action="@{'/orphanage/donations/' + ${donation.donationId} + '/claim'}" method="post">
+                        <button class="px-4 py-2 rounded-md btn-primary">
+                            Claim this donation
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-soft">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><polyline points="22 4 12 14 9 11"/></svg>
+                    Trip estimate
+                </h2>
+                <div id="etaBadge" class="text-sm text-slate-500">calculating…</div>
+            </div>
+
+            <div id="etaSummary" class="grid grid-cols-2 gap-3 mb-4 text-sm">
+                <div class="bg-slate-50 rounded-xl p-3">
+                    <div class="text-slate-500 text-xs uppercase tracking-wider font-semibold">Distance</div>
+                    <div id="etaDistance" class="text-lg font-extrabold text-slate-900 mt-1">—</div>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3">
+                    <div class="text-slate-500 text-xs uppercase tracking-wider font-semibold">Driving time</div>
+                    <div id="etaDuration" class="text-lg font-extrabold text-slate-900 mt-1">—</div>
+                </div>
+            </div>
+
+            <div id="routeMap" class="w-full h-64 rounded-xl border border-slate-200 z-0"></div>
+            <p id="etaStatus" class="mt-3 text-xs text-slate-500"></p>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const fromLat = /*[[${user.latitude}]]*/ null;
+        const fromLng = /*[[${user.longitude}]]*/ null;
+        const toLat   = /*[[${donation.restaurant.latitude}]]*/ null;
+        const toLng   = /*[[${donation.restaurant.longitude}]]*/ null;
+        const restaurantName = /*[[${donation.restaurant.fullName}]]*/ '';
+        /*]]>*/
+
+        const statusEl = document.getElementById('etaStatus');
+        const badgeEl  = document.getElementById('etaBadge');
+        const distEl   = document.getElementById('etaDistance');
+        const durEl    = document.getElementById('etaDuration');
+        const mapEl    = document.getElementById('routeMap');
+
+        function fmtDuration(s) {
+            const m = Math.round(s / 60);
+            if (m < 60) return m + ' min';
+            const h = Math.floor(m / 60), rem = m % 60;
+            return rem === 0 ? h + 'h' : h + 'h ' + rem + 'm';
+        }
+        function fmtDistance(m) {
+            return m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(m < 10000 ? 1 : 0) + ' km';
+        }
+
+        if (fromLat == null || fromLng == null) {
+            badgeEl.innerHTML = '<a href="/profile" class="text-brand-700 hover:underline font-semibold">Set your location to see ETA</a>';
+            mapEl.classList.add('hidden');
+        } else if (toLat == null || toLng == null) {
+            badgeEl.textContent = 'Restaurant has no location set';
+            mapEl.classList.add('hidden');
+        } else {
+            const map = L.map('routeMap');
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            const orphanageIcon = L.divIcon({
+                className: '',
+                html: '<div style="background:#16a34a;color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:14px;font-weight:bold;">O</div>',
+                iconSize: [28, 28], iconAnchor: [14, 14]
+            });
+            const restoIcon = L.divIcon({
+                className: '',
+                html: '<div style="background:#d97706;color:#fff;border:2px solid #fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);font-size:14px;font-weight:bold;">R</div>',
+                iconSize: [28, 28], iconAnchor: [14, 14]
+            });
+
+            const fromLL = [fromLat, fromLng];
+            const toLL   = [toLat, toLng];
+            L.marker(fromLL, { icon: orphanageIcon }).addTo(map).bindPopup('You');
+            L.marker(toLL,   { icon: restoIcon }).addTo(map).bindPopup(restaurantName);
+            map.fitBounds([fromLL, toLL], { padding: [40, 40] });
+
+            (async function () {
+                try {
+                    const url = 'https://router.project-osrm.org/route/v1/driving/'
+                        + fromLng + ',' + fromLat + ';' + toLng + ',' + toLat
+                        + '?overview=full&geometries=geojson';
+                    const r = await fetch(url);
+                    const json = await r.json();
+                    if (json.code !== 'Ok' || !json.routes || !json.routes.length) throw 0;
+                    const route = json.routes[0];
+                    distEl.textContent = fmtDistance(route.distance);
+                    durEl.textContent  = fmtDuration(route.duration);
+                    badgeEl.textContent = '~' + fmtDuration(route.duration) + ' away';
+                    badgeEl.className = 'text-sm font-semibold text-brand-700';
+
+                    L.geoJSON(route.geometry, { style: { color: '#16a34a', weight: 5, opacity: 0.85 } }).addTo(map);
+                    map.fitBounds(L.geoJSON(route.geometry).getBounds(), { padding: [40, 40] });
+                    statusEl.textContent = 'Route via OSRM (OpenStreetMap). Times are estimates for driving.';
+                } catch (e) {
+                    badgeEl.textContent = 'unavailable';
+                    statusEl.textContent = 'Could not fetch a route right now.';
+                }
+            })();
+        }
+    </script>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Available donations')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in-up">
+
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 text-white p-6 md:p-8 shadow-soft">
+            <div class="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute -bottom-16 -left-10 w-64 h-64 rounded-full bg-amber-200/20 blur-3xl"></div>
+            <div class="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <div class="text-amber-100 text-xs uppercase tracking-wider font-bold">Orphanage view</div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Available donations</h1>
+                    <p class="text-amber-100 mt-1 text-sm">Claim a donation to see contact details and coordinate pickup.</p>
+                </div>
+                <div class="flex items-center gap-2 text-sm bg-white/15 backdrop-blur rounded-xl p-1">
+                    <span class="text-white/80 px-2">Sort</span>
+                    <a th:href="@{/orphanage(sort='posted')}"
+                       class="px-3 py-1.5 rounded-lg transition"
+                       th:classappend="${currentSort == 'posted'} ? 'bg-white text-amber-700 font-semibold shadow-soft' : 'text-white hover:bg-white/10'">
+                        Date posted
+                    </a>
+                    <a th:href="@{/orphanage(sort='deadline')}"
+                       class="px-3 py-1.5 rounded-lg transition"
+                       th:classappend="${currentSort == 'deadline'} ? 'bg-white text-amber-700 font-semibold shadow-soft' : 'text-white hover:bg-white/10'">
+                        Deadline
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <section class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <article th:each="d : ${donations}"
+                     class="eta-card group bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-soft hover:-translate-y-1 hover:shadow-lg transition flex flex-col justify-between"
+                     th:attr="data-from-lat=${user.latitude},data-from-lng=${user.longitude},data-to-lat=${d.restaurant.latitude},data-to-lng=${d.restaurant.longitude}">
+                <div th:if="${d.imagePath}" class="relative h-40 bg-slate-100 overflow-hidden">
+                    <img th:src="${d.imagePath}" alt="Food" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"/>
+                    <span class="absolute top-3 right-3 text-xs px-2 py-1 rounded-full bg-white/95 backdrop-blur text-brand-700 font-semibold flex items-center gap-1 shadow-soft">
+                        <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                        Available
+                    </span>
+                </div>
+                <div class="p-5 flex flex-col justify-between flex-1">
+                <div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-100 to-emerald-100 text-brand-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                <img th:if="${d.restaurant.logoPath}" th:src="${d.restaurant.logoPath}" class="w-full h-full object-cover" alt="Logo"/>
+                                <svg th:unless="${d.restaurant.logoPath}" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c-1.5 3-1.5 5 0 7"/><path d="M5 10c0 6 3 10 7 10s7-4 7-10c0-1-1-2-2-2H7c-1 0-2 1-2 2z"/></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-900 leading-snug" th:text="${d.foodItemName}"></h3>
+                        </div>
+                        <span th:unless="${d.imagePath}" class="text-xs px-2 py-1 rounded-full bg-brand-100 text-brand-700 font-semibold whitespace-nowrap flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+                            Available
+                        </span>
+                    </div>
+                    <p class="text-sm font-medium text-slate-700 mt-3" th:text="${d.quantity}"></p>
+                    <div class="mt-3 space-y-1.5 text-xs text-slate-500">
+                        <div class="flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            From <span class="font-semibold text-slate-700" th:text="${d.restaurant.fullName}"></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Pickup by <span th:text="${#temporals.format(d.pickupDeadline, 'yyyy-MM-dd HH:mm')}"></span>
+                        </div>
+                        <div class="eta-row flex items-center gap-1.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><polyline points="22 4 12 14 9 11"/></svg>
+                            <span class="eta-label text-slate-500">Estimated trip:</span>
+                            <span class="eta-value font-semibold text-slate-700">calculating…</span>
+                        </div>
+                        <div class="flex items-start gap-1.5 text-slate-500" th:if="${d.specialInstructions}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span th:text="${d.specialInstructions}"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 flex gap-2">
+                    <a th:href="@{'/orphanage/donations/' + ${d.donationId}}"
+                       class="flex-1 text-center px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                        Details
+                    </a>
+                    <form th:action="@{'/orphanage/donations/' + ${d.donationId} + '/claim'}" method="post" class="flex-1">
+                        <button class="w-full px-3 py-2 rounded-lg btn-primary text-sm">
+                            Claim
+                        </button>
+                    </form>
+                </div>
+                </div>
+            </article>
+            <div th:if="${donations.empty}"
+                 class="md:col-span-2 lg:col-span-3 bg-white border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center">
+                <div class="inline-flex w-14 h-14 rounded-full bg-slate-100 text-slate-400 items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div class="text-slate-700 font-semibold">No donations available right now</div>
+                <div class="text-slate-500 text-sm mt-1">Check back soon — new posts appear here in real time.</div>
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold text-slate-900">My claims</h2>
+                <span class="text-xs text-slate-500" th:if="${!myClaims.empty}" th:text="${myClaims.size()} + ' claim(s)'"></span>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-soft">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="text-left px-5 py-3">Food</th>
+                                <th class="text-left px-5 py-3">Restaurant</th>
+                                <th class="text-left px-5 py-3">Contact</th>
+                                <th class="text-left px-5 py-3">Status</th>
+                                <th class="text-right px-5 py-3"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${myClaims}" class="border-t border-slate-100 align-top hover:bg-slate-50/60 transition">
+                            <td class="px-5 py-3.5 font-semibold text-slate-900" th:text="${c.donation.foodItemName}"></td>
+                            <td class="px-5 py-3.5 text-slate-700" th:text="${c.donation.restaurant.fullName}"></td>
+                            <td class="px-5 py-3.5 text-xs">
+                                <div class="text-slate-700 font-medium" th:text="${c.donation.restaurant.phoneNumber}"></div>
+                                <div class="text-slate-500" th:text="${c.donation.restaurant.address}"></div>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                                      th:classappend="${c.status.name() == 'PENDING'} ? 'bg-amber-100 text-amber-700' : (${c.status.name() == 'COMPLETED'} ? 'bg-brand-100 text-brand-700' : 'bg-slate-200 text-slate-600')">
+                                    <span class="w-1.5 h-1.5 rounded-full"
+                                          th:classappend="${c.status.name() == 'PENDING'} ? 'bg-amber-500' : (${c.status.name() == 'COMPLETED'} ? 'bg-brand-500' : 'bg-slate-500')"></span>
+                                    <span th:text="${c.status}"></span>
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5 text-right">
+                                <form th:if="${c.status.name() == 'PENDING'}"
+                                      th:action="@{'/orphanage/claims/' + ${c.claimId} + '/cancel'}" method="post">
+                                    <button class="text-red-600 hover:text-red-700 hover:underline text-sm font-semibold">Cancel</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${myClaims.empty}">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-500 text-sm">No claims yet.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        (function () {
+            const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
+
+            function fmtDuration(seconds) {
+                const m = Math.round(seconds / 60);
+                if (m < 60) return m + ' min';
+                const h = Math.floor(m / 60);
+                const rem = m % 60;
+                return rem === 0 ? h + 'h' : h + 'h ' + rem + 'm';
+            }
+            function fmtDistance(meters) {
+                if (meters < 1000) return Math.round(meters) + ' m';
+                return (meters / 1000).toFixed(meters < 10000 ? 1 : 0) + ' km';
+            }
+
+            async function compute(card) {
+                const value = card.querySelector('.eta-value');
+                const label = card.querySelector('.eta-label');
+                const fLat = card.dataset.fromLat, fLng = card.dataset.fromLng;
+                const tLat = card.dataset.toLat,  tLng = card.dataset.toLng;
+                if (!fLat || !fLng) {
+                    label.textContent = '';
+                    value.innerHTML = '<a href="/profile" class="text-brand-700 hover:underline">Set your location</a>';
+                    return;
+                }
+                if (!tLat || !tLng) {
+                    label.textContent = '';
+                    value.textContent = 'Restaurant has no location set';
+                    value.classList.remove('text-slate-700');
+                    value.classList.add('text-slate-400', 'font-normal');
+                    return;
+                }
+                const key = 'eta:' + fLat + ',' + fLng + '->' + tLat + ',' + tLng;
+                const cached = sessionStorage.getItem(key);
+                if (cached) {
+                    const c = JSON.parse(cached);
+                    value.textContent = fmtDuration(c.d) + ' · ' + fmtDistance(c.m);
+                    return;
+                }
+                try {
+                    const url = OSRM + fLng + ',' + fLat + ';' + tLng + ',' + tLat + '?overview=false';
+                    const r = await fetch(url);
+                    const json = await r.json();
+                    if (json.code !== 'Ok' || !json.routes || !json.routes.length) throw 0;
+                    const route = json.routes[0];
+                    sessionStorage.setItem(key, JSON.stringify({ d: route.duration, m: route.distance }));
+                    value.textContent = fmtDuration(route.duration) + ' · ' + fmtDistance(route.distance);
+                } catch (e) {
+                    value.textContent = 'unavailable';
+                    value.classList.add('text-slate-400');
+                }
+            }
+
+            const cards = Array.from(document.querySelectorAll('.eta-card'));
+            const CONCURRENCY = 3;
+            let idx = 0;
+            async function worker() {
+                while (idx < cards.length) {
+                    const i = idx++;
+                    await compute(cards[i]);
+                }
+            }
+            for (let i = 0; i < CONCURRENCY; i++) worker();
+        })();
+    </script>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
