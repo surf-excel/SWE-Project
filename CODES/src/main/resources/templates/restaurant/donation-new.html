@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Post a donation')}"></head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="flex-1 grid-bg">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="max-w-2xl mx-auto px-4 py-10 animate-fade-in-up">
+        <a th:href="@{/restaurant}" class="text-sm text-slate-500 hover:text-slate-700 inline-flex items-center gap-1 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back to dashboard
+        </a>
+        <div class="bg-white border border-slate-200 rounded-2xl p-7 shadow-soft">
+            <h1 class="text-2xl font-extrabold text-slate-900">New donation</h1>
+            <p class="text-sm text-slate-500 mt-1">Be specific so orphanages can plan meals quickly.</p>
+
+            <form th:action="@{/restaurant/donations}" th:object="${form}" method="post" enctype="multipart/form-data" class="mt-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Food item name</label>
+                    <input type="text" th:field="*{foodItemName}"
+                           placeholder="e.g. Chicken biryani"
+                           class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"/>
+                    <p class="text-xs text-red-600 mt-1" th:if="${#fields.hasErrors('foodItemName')}" th:errors="*{foodItemName}"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Quantity</label>
+                    <input type="text" th:field="*{quantity}"
+                           placeholder="e.g. 25 portions, or 5 kg"
+                           class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"/>
+                    <p class="text-xs text-red-600 mt-1" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Pickup deadline</label>
+                    <input type="datetime-local" th:field="*{pickupDeadline}"
+                           class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"/>
+                    <p class="text-xs text-red-600 mt-1" th:if="${#fields.hasErrors('pickupDeadline')}" th:errors="*{pickupDeadline}"></p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Special instructions</label>
+                    <textarea th:field="*{specialInstructions}" rows="3"
+                              placeholder="e.g. Use the back entrance. Bring sealed containers."
+                              class="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700">Food photo <span class="text-slate-400 font-normal">(optional)</span></label>
+                    <label for="donationImage"
+                           class="mt-1.5 flex flex-col items-center justify-center w-full py-6 px-4 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition group">
+                        <img id="donationPreview" class="hidden max-h-44 rounded-lg shadow-soft mb-2" alt="Preview"/>
+                        <div id="donationPlaceholder" class="flex flex-col items-center text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-slate-400 group-hover:text-brand-500 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span class="mt-2 text-sm font-medium">Click to upload an image</span>
+                            <span class="text-xs text-slate-400">JPG, PNG, GIF or WEBP &middot; up to 5 MB</span>
+                        </div>
+                    </label>
+                    <input id="donationImage" type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this, 'donationPreview', 'donationPlaceholder')"/>
+                </div>
+
+                <div class="rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs p-4 flex gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    Food quality and safety are your responsibility. Only list properly handled surplus food.
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <a th:href="@{/restaurant}" class="px-4 py-2.5 rounded-lg border border-slate-300 hover:bg-slate-50 font-medium">Cancel</a>
+                    <button class="px-5 py-2.5 rounded-lg btn-primary">
+                        Post donation
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        function previewImage(input, previewId, placeholderId) {
+            const file = input.files && input.files[0];
+            const preview = document.getElementById(previewId);
+            const placeholder = document.getElementById(placeholderId);
+            if (!file) {
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
